@@ -10,27 +10,39 @@
  *
  **************************************************************************/
 
-#include "Logger.h"
 #include "EventLoop.h"
+#include "Logger.h"
+#include "ThreadPool.h"
+#include <iostream>
+#include <thread>
 
 using namespace ev;
 
+struct Foo {
+  Foo(int num) : num_(num) {}
+
+  int num() {
+    return num_;
+  };
+  int num_;
+};
+
 int main()
 {
-    EventLoop loop;
 
-    loop.runEvery(1s, [](){
-        INFO("run every 1s");
-    });
-    loop.runAfter(10s, [&](){
-        INFO("end after 10s");
-        loop.quit();
-    });
-    loop.runAt(clock::nowAfter(15min), [&](){
-        INFO("run 15min later");
-    });
+  Foo foo(10);
 
-    INFO("start looping");
-    loop.loop();
+  EventLoop loop;
+
+  ThreadPool tp( 2 );
+
+  std::this_thread::sleep_for(2s);
+
+  auto r = tp.push( &Foo::num, &foo );
+
+  std::cout << r.get() << std::endl;
+
+  loop.loop();
+
 }
 
